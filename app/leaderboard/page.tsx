@@ -95,7 +95,7 @@ export default function LeaderboardPage() {
       if (!houseName || houseName === "other") return;
       if (!houseUserMap[houseName]) return; // ignore houses not in HOUSES
 
-      const userId = session.userId ?? "__anonymous__";
+      const userId = session.playerEmail ?? "__anonymous__";
 
       const score = computeSessionScore(session);
       if (!houseUserMap[houseName][userId]) {
