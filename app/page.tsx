@@ -292,7 +292,7 @@ export default function Home() {
       {/* Header with email badge */}
       {userEmail && (
         <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center">
-          <Link
+          {/* <Link
             href="/leaderboard"
             className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all"
           >
@@ -300,7 +300,7 @@ export default function Home() {
             <span className="text-sm font-semibold text-gray-900">
               Leaderboard
             </span>
-          </Link>
+          </Link> */}
 
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md">
             <span className="text-sm text-gray-600">Playing as:</span>

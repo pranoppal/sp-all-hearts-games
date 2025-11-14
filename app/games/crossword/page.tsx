@@ -162,12 +162,12 @@ export default function CrosswordPage() {
             )}
 
             <div className="space-y-3">
-              <Link
+              {/* <Link
                 href="/leaderboard"
                 className="block w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
               >
                 🏆 View Leaderboard
-              </Link>
+              </Link> */}
               <Link
                 href="/"
                 className="block w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
@@ -221,12 +221,12 @@ export default function CrosswordPage() {
             )}
 
             <div className="space-y-3">
-              <Link
+              {/* <Link
                 href="/leaderboard"
                 className="block w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
               >
                 🏆 View Leaderboard
-              </Link>
+              </Link> */}
               <Link
                 href="/"
                 className="block w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"

@@ -185,9 +185,7 @@ export default function CrosswordGame({
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Game Complete!
           </h2>
-          <p className="text-gray-600 mb-6">
-            Great job, {playerEmail.split("@")[0]}!
-          </p>
+          <p className="text-gray-600 mb-6">Great job, {playerName}!</p>
 
           <div className="bg-gray-50 rounded-lg p-6 mb-6 space-y-3">
             <div className="flex justify-between items-center">
@@ -204,14 +202,14 @@ export default function CrosswordGame({
             </div>
           </div>
 
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <Link
               href="/leaderboard"
               className="block w-full px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
             >
               Visit Leaderboard
             </Link>
-          </div>
+          </div> */}
         </div>
       </div>
     );
