@@ -24,7 +24,15 @@ export default function Home() {
   const [hasPlayedTyping, setHasPlayedTyping] = useState(false);
   const [hasPlayedMemory, setHasPlayedMemory] = useState(false);
   const [gameTimings, setGameTimings] = useState<GameTiming[]>([]);
-  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Helper function to get current time in IST
+  const getCurrentTimeInIST = () => {
+    return new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    );
+  };
+
+  const [currentTime, setCurrentTime] = useState(getCurrentTimeInIST());
 
   const houses = [
     { id: "fire", name: "Fire", emoji: "🔥", color: "red" },
@@ -47,10 +55,10 @@ export default function Home() {
     fetchTimings();
   }, []);
 
-  // Update current time every second for countdown
+  // Update current time every second for countdown (in IST)
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(new Date());
+      setCurrentTime(getCurrentTimeInIST());
     }, 1000);
 
     return () => clearInterval(timer);
@@ -344,7 +352,7 @@ export default function Home() {
         <div className="z-10 max-w-6xl w-full items-center justify-center font-mono text-sm">
           <div className="text-center mb-12">
             <h1 className="text-5xl font-bold text-gray-900 mb-4">
-              🎮 All Hearts Games
+              🎮 All Hearts 2025 - Games
             </h1>
             <p className="text-xl text-gray-600">
               Choose your favorite game and start playing!
@@ -354,7 +362,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto mb-12">
             <Link
               href="/games/crossword"
-              className={`group rounded-xl border px-6 py-8 transition-all relative ${
+              className={`group rounded-xl border px-6 py-8 transition-all relative overflow-hidden ${
                 hasPlayedCrossword
                   ? "border-green-300 bg-green-50"
                   : isGameUpcoming("crossword")
@@ -370,30 +378,34 @@ export default function Home() {
               }}
             >
               {hasPlayedCrossword && (
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-4 right-4 z-10">
                   <span className="text-3xl">✅</span>
                 </div>
               )}
-              <div className="text-5xl mb-4">🧩</div>
-              <h2 className="mb-3 text-2xl font-semibold text-gray-900">
-                Crossword{" "}
-                {!hasPlayedCrossword && isGameActive("crossword") && (
-                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                    →
-                  </span>
-                )}
-              </h2>
-              <p className="m-0 text-sm text-gray-600">
-                Solve crossword puzzles and test your vocabulary skills!
-              </p>
 
-              {/* Status badge and countdown */}
+              {/* Blurred content for upcoming games */}
+              <div className={isGameUpcoming("crossword") ? "blur-md" : ""}>
+                <div className="text-5xl mb-4">🧩</div>
+                <h2 className="mb-3 text-2xl font-semibold text-gray-900">
+                  Crossword{" "}
+                  {!hasPlayedCrossword && isGameActive("crossword") && (
+                    <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                      →
+                    </span>
+                  )}
+                </h2>
+                <p className="m-0 text-sm text-gray-600">
+                  Solve crossword puzzles and test your vocabulary skills!
+                </p>
+              </div>
+
+              {/* Status badge and countdown - always visible */}
               {hasPlayedCrossword ? (
                 <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
                   ✓ Completed
                 </div>
               ) : isGameUpcoming("crossword") ? (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-2 relative z-10">
                   <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
                     🔒 Locked
                   </div>
@@ -423,7 +435,7 @@ export default function Home() {
 
             <Link
               href="/games/wordle"
-              className={`group rounded-xl border px-6 py-8 transition-all relative ${
+              className={`group rounded-xl border px-6 py-8 transition-all relative overflow-hidden ${
                 hasPlayedWordle
                   ? "border-green-300 bg-green-50"
                   : isGameUpcoming("wordle")
@@ -439,30 +451,34 @@ export default function Home() {
               }}
             >
               {hasPlayedWordle && (
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-4 right-4 z-10">
                   <span className="text-3xl">✅</span>
                 </div>
               )}
-              <div className="text-5xl mb-4">📝</div>
-              <h2 className="mb-3 text-2xl font-semibold text-gray-900">
-                Wordle{" "}
-                {!hasPlayedWordle && isGameActive("wordle") && (
-                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                    →
-                  </span>
-                )}
-              </h2>
-              <p className="m-0 text-sm text-gray-600">
-                Guess the word in 6 tries or less!
-              </p>
 
-              {/* Status badge and countdown */}
+              {/* Blurred content for upcoming games */}
+              <div className={isGameUpcoming("wordle") ? "blur-md" : ""}>
+                <div className="text-5xl mb-4">📝</div>
+                <h2 className="mb-3 text-2xl font-semibold text-gray-900">
+                  Wordle{" "}
+                  {!hasPlayedWordle && isGameActive("wordle") && (
+                    <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                      →
+                    </span>
+                  )}
+                </h2>
+                <p className="m-0 text-sm text-gray-600">
+                  Guess the word in 6 tries or less!
+                </p>
+              </div>
+
+              {/* Status badge and countdown - always visible */}
               {hasPlayedWordle ? (
                 <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
                   ✓ Completed
                 </div>
               ) : isGameUpcoming("wordle") ? (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-2 relative z-10">
                   <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
                     🔒 Locked
                   </div>
@@ -492,7 +508,7 @@ export default function Home() {
 
             <Link
               href="/games/sudoku"
-              className={`group rounded-xl border px-6 py-8 transition-all relative ${
+              className={`group rounded-xl border px-6 py-8 transition-all relative overflow-hidden ${
                 hasPlayedSudoku
                   ? "border-green-300 bg-green-50"
                   : isGameUpcoming("sudoku")
@@ -508,30 +524,34 @@ export default function Home() {
               }}
             >
               {hasPlayedSudoku && (
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-4 right-4 z-10">
                   <span className="text-3xl">✅</span>
                 </div>
               )}
-              <div className="text-5xl mb-4">🔢</div>
-              <h2 className="mb-3 text-2xl font-semibold text-gray-900">
-                Sudoku{" "}
-                {!hasPlayedSudoku && isGameActive("sudoku") && (
-                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                    →
-                  </span>
-                )}
-              </h2>
-              <p className="m-0 text-sm text-gray-600">
-                Challenge your logic with number puzzles.
-              </p>
 
-              {/* Status badge and countdown */}
+              {/* Blurred content for upcoming games */}
+              <div className={isGameUpcoming("sudoku") ? "blur-md" : ""}>
+                <div className="text-5xl mb-4">🔢</div>
+                <h2 className="mb-3 text-2xl font-semibold text-gray-900">
+                  Sudoku{" "}
+                  {!hasPlayedSudoku && isGameActive("sudoku") && (
+                    <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                      →
+                    </span>
+                  )}
+                </h2>
+                <p className="m-0 text-sm text-gray-600">
+                  Challenge your logic with number puzzles.
+                </p>
+              </div>
+
+              {/* Status badge and countdown - always visible */}
               {hasPlayedSudoku ? (
                 <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
                   ✓ Completed
                 </div>
               ) : isGameUpcoming("sudoku") ? (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-2 relative z-10">
                   <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
                     🔒 Locked
                   </div>
@@ -561,7 +581,7 @@ export default function Home() {
 
             <Link
               href="/games/typing"
-              className={`group rounded-xl border px-6 py-8 transition-all relative ${
+              className={`group rounded-xl border px-6 py-8 transition-all relative overflow-hidden ${
                 hasPlayedTyping
                   ? "border-green-300 bg-green-50"
                   : isGameUpcoming("typing")
@@ -577,30 +597,34 @@ export default function Home() {
               }}
             >
               {hasPlayedTyping && (
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-4 right-4 z-10">
                   <span className="text-3xl">✅</span>
                 </div>
               )}
-              <div className="text-5xl mb-4">⌨️</div>
-              <h2 className="mb-3 text-2xl font-semibold text-gray-900">
-                Typing Competition{" "}
-                {!hasPlayedTyping && isGameActive("typing") && (
-                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                    →
-                  </span>
-                )}
-              </h2>
-              <p className="m-0 text-sm text-gray-600">
-                Test your typing speed and accuracy!
-              </p>
 
-              {/* Status badge and countdown */}
+              {/* Blurred content for upcoming games */}
+              <div className={isGameUpcoming("typing") ? "blur-md" : ""}>
+                <div className="text-5xl mb-4">⌨️</div>
+                <h2 className="mb-3 text-2xl font-semibold text-gray-900">
+                  Typing Competition{" "}
+                  {!hasPlayedTyping && isGameActive("typing") && (
+                    <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                      →
+                    </span>
+                  )}
+                </h2>
+                <p className="m-0 text-sm text-gray-600">
+                  Test your typing speed and accuracy!
+                </p>
+              </div>
+
+              {/* Status badge and countdown - always visible */}
               {hasPlayedTyping ? (
                 <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
                   ✓ Completed
                 </div>
               ) : isGameUpcoming("typing") ? (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-2 relative z-10">
                   <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
                     🔒 Locked
                   </div>
@@ -630,7 +654,7 @@ export default function Home() {
 
             <Link
               href="/games/memory"
-              className={`group rounded-xl border px-6 py-8 transition-all relative ${
+              className={`group rounded-xl border px-6 py-8 transition-all relative overflow-hidden ${
                 hasPlayedMemory
                   ? "border-green-300 bg-green-50"
                   : isGameUpcoming("memory")
@@ -646,30 +670,34 @@ export default function Home() {
               }}
             >
               {hasPlayedMemory && (
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-4 right-4 z-10">
                   <span className="text-3xl">✅</span>
                 </div>
               )}
-              <div className="text-5xl mb-4">🎯</div>
-              <h2 className="mb-3 text-2xl font-semibold text-gray-900">
-                Memory Game{" "}
-                {!hasPlayedMemory && isGameActive("memory") && (
-                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                    →
-                  </span>
-                )}
-              </h2>
-              <p className="m-0 text-sm text-gray-600">
-                Match pairs and train your memory!
-              </p>
 
-              {/* Status badge and countdown */}
+              {/* Blurred content for upcoming games */}
+              <div className={isGameUpcoming("memory") ? "blur-md" : ""}>
+                <div className="text-5xl mb-4">🎯</div>
+                <h2 className="mb-3 text-2xl font-semibold text-gray-900">
+                  Memory Game{" "}
+                  {!hasPlayedMemory && isGameActive("memory") && (
+                    <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                      →
+                    </span>
+                  )}
+                </h2>
+                <p className="m-0 text-sm text-gray-600">
+                  Match pairs and train your memory!
+                </p>
+              </div>
+
+              {/* Status badge and countdown - always visible */}
               {hasPlayedMemory ? (
                 <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
                   ✓ Completed
                 </div>
               ) : isGameUpcoming("memory") ? (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-2 relative z-10">
                   <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
                     🔒 Locked
                   </div>
