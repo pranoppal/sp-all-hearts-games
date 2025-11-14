@@ -16,6 +16,7 @@ export interface House {
   id: string;
   name: string;
   emoji: string;
+  logo: string;
   color: string;
   bgColor: string;
   borderColor: string;

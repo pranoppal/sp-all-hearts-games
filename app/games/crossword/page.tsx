@@ -1,81 +1,101 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import axios from 'axios';
-import CrosswordGame from '@/components/games/crossword/CrosswordGame';
-import { getHouseById } from '@/lib/shared/houses';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import axios from "axios";
+import CrosswordGame from "@/components/games/crossword/CrosswordGame";
+import { getHouseById } from "@/lib/shared/houses";
 
 export default function CrosswordPage() {
-  const [userEmail, setUserEmail] = useState<string>('');
-  const [userHouse, setUserHouse] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [userHouse, setUserHouse] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [hasPlayed, setHasPlayed] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
-  const [gameStatus, setGameStatus] = useState<'active' | 'upcoming' | 'ended' | null>(null);
+  const [gameStatus, setGameStatus] = useState<
+    "active" | "upcoming" | "ended" | null
+  >(null);
   const router = useRouter();
 
   useEffect(() => {
     const initPage = async () => {
       // Check if email and house exist in localStorage
-      const savedEmail = localStorage.getItem('userEmail');
-      const savedHouse = localStorage.getItem('userHouse');
-      
+      const savedEmail = localStorage.getItem("userEmail");
+      const savedHouse = localStorage.getItem("userHouse");
+      const savedName = localStorage.getItem("playerName");
+
       if (savedEmail && savedHouse) {
         setUserEmail(savedEmail);
         setUserHouse(savedHouse);
-        
+        setUserName(savedName || savedEmail.split("@")[0]);
+
         // Check game timing
         try {
-          const timingsResponse = await axios.get('/api/game-timings');
+          const timingsResponse = await axios.get("/api/game-timings");
           const timings = timingsResponse.data;
-          const crosswordTiming = timings.find((t: any) => t.game === 'crossword');
-          
+          const crosswordTiming = timings.find(
+            (t: any) => t.game === "crossword"
+          );
+
           if (crosswordTiming) {
-            const now = new Date();
-            const start = new Date(crosswordTiming.start);
-            const end = new Date(crosswordTiming.end);
-            
+            // Get current time in IST
+            const now = new Date(
+              new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+            );
+
+            // Parse timing dates as IST
+            const start = new Date(
+              new Date(crosswordTiming.start).toLocaleString("en-US", {
+                timeZone: "Asia/Kolkata",
+              })
+            );
+            const end = new Date(
+              new Date(crosswordTiming.end).toLocaleString("en-US", {
+                timeZone: "Asia/Kolkata",
+              })
+            );
+
             if (now < start) {
-              setGameStatus('upcoming');
+              setGameStatus("upcoming");
             } else if (now > end) {
-              setGameStatus('ended');
+              setGameStatus("ended");
             } else {
-              setGameStatus('active');
+              setGameStatus("active");
             }
           } else {
-            setGameStatus('active'); // No timing found, assume active
+            setGameStatus("active"); // No timing found, assume active
           }
         } catch (error) {
-          console.error('Error checking game timing:', error);
-          setGameStatus('active'); // Default to active on error
+          console.error("Error checking game timing:", error);
+          setGameStatus("active"); // Default to active on error
         }
-        
+
         // Check if user has already played
         try {
-          const response = await axios.get('/api/games/crossword/sessions');
+          const response = await axios.get("/api/games/crossword/sessions");
           const sessions = response.data;
-          
+
           // Check if this user has completed the game before
           const userSession = sessions.find(
-            (session: any) => 
-              session.playerEmail === savedEmail && 
-              session.completed === true
+            (session: any) =>
+              session.playerEmail === savedEmail && session.completed === true
           );
-          
+
           if (userSession) {
             setHasPlayed(true);
           }
         } catch (error) {
-          console.error('Error checking game status:', error);
+          console.error("Error checking game status:", error);
         }
-        
+
         setCheckingStatus(false);
         setLoading(false);
       } else {
         // Redirect to home if no email or house found
-        router.push('/');
+        router.push("/");
       }
     };
 
@@ -98,27 +118,39 @@ export default function CrosswordPage() {
   }
 
   // Check if game is not active
-  if (gameStatus === 'upcoming' || gameStatus === 'ended') {
+  if (gameStatus === "upcoming" || gameStatus === "ended") {
     const houseData = getHouseById(userHouse);
-    
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 py-12 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
-            <div className="text-6xl mb-4">{gameStatus === 'upcoming' ? '🔒' : '⏰'}</div>
+            <div className="text-6xl mb-4">
+              {gameStatus === "upcoming" ? "🔒" : "⏰"}
+            </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              {gameStatus === 'upcoming' ? 'Game Not Started Yet' : 'Game Has Ended'}
+              {gameStatus === "upcoming"
+                ? "Game Not Started Yet"
+                : "Game Has Ended"}
             </h1>
             <p className="text-gray-600 mb-6">
-              {gameStatus === 'upcoming'
-                ? 'This game hasn\'t started yet. Please check back when the game opens!'
-                : 'This game has ended and is no longer accepting submissions.'}
+              {gameStatus === "upcoming"
+                ? "This game hasn't started yet. Please check back when the game opens!"
+                : "This game has ended and is no longer accepting submissions."}
             </p>
-            
+
             {houseData && (
-              <div className={`p-4 rounded-lg ${houseData.bgColor} ${houseData.borderColor} border-2 mb-6`}>
+              <div
+                className={`p-4 rounded-lg ${houseData.bgColor} ${houseData.borderColor} border-2 mb-6`}
+              >
                 <div className="flex items-center justify-center gap-3">
-                  <span className="text-3xl">{houseData.emoji}</span>
+                  <Image
+                    src={houseData.logo}
+                    alt={houseData.name}
+                    width={56}
+                    height={56}
+                    className="rounded-lg"
+                  />
                   <div>
                     <p className="text-sm text-gray-600">Playing for</p>
                     <p className={`text-xl font-bold ${houseData.color}`}>
@@ -152,7 +184,7 @@ export default function CrosswordPage() {
   // If user has already played, show message
   if (hasPlayed) {
     const houseData = getHouseById(userHouse);
-    
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 py-12 px-4">
         <div className="max-w-2xl mx-auto">
@@ -162,13 +194,22 @@ export default function CrosswordPage() {
               You&apos;ve Already Played!
             </h1>
             <p className="text-gray-600 mb-6">
-              You&apos;ve already completed the Crossword game. Each player can only play once to keep the competition fair!
+              You&apos;ve already completed the Crossword game. Each player can
+              only play once to keep the competition fair!
             </p>
-            
+
             {houseData && (
-              <div className={`p-4 rounded-lg ${houseData.bgColor} ${houseData.borderColor} border-2 mb-6`}>
+              <div
+                className={`p-4 rounded-lg ${houseData.bgColor} ${houseData.borderColor} border-2 mb-6`}
+              >
                 <div className="flex items-center justify-center gap-3">
-                  <span className="text-3xl">{houseData.emoji}</span>
+                  <Image
+                    src={houseData.logo}
+                    alt={houseData.name}
+                    width={56}
+                    height={56}
+                    className="rounded-lg"
+                  />
                   <div>
                     <p className="text-sm text-gray-600">Playing for</p>
                     <p className={`text-xl font-bold ${houseData.color}`}>
@@ -196,7 +237,8 @@ export default function CrosswordPage() {
 
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-sm text-gray-500">
-                Your score has been recorded and contributes to your house&apos;s total points!
+                Your score has been recorded and contributes to your
+                house&apos;s total points!
               </p>
             </div>
           </div>
@@ -205,5 +247,11 @@ export default function CrosswordPage() {
     );
   }
 
-  return <CrosswordGame playerEmail={userEmail} playerHouse={userHouse} />;
+  return (
+    <CrosswordGame
+      playerEmail={userEmail}
+      playerHouse={userHouse}
+      playerName={userName}
+    />
+  );
 }

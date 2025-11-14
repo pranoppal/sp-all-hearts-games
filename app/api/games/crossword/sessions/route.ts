@@ -9,14 +9,20 @@ export async function GET() {
   try {
     const scores = await getScoresByGame("crossword");
 
+    // Get current time in IST
+    const currentTimeIST = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    ).toISOString();
+
     // Transform scores to session format for backward compatibility
+    console.log('scores', scores);
     const sessions = scores.map((score, index) => ({
       id: `${score.email}-${score.duration}-${index}`, // Generate ID from data
-      playerName: score.email.split("@")[0],
+      playerName: score.name || score.email.split("@")[0],
       playerEmail: score.email,
       house: score.house,
       gameType: "crossword",
-      startTime: new Date().toISOString(), // We don't have this data
+      startTime: currentTimeIST, // We don't have this data
       completed: true,
       correctAnswers: Math.round((score.score / 100) * 10), // Approximate
       totalWords: 10, // Approximate
@@ -44,7 +50,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { playerEmail, house, totalWords } = body;
+    const { playerEmail, house, totalWords, playerName } = body;
 
     if (!playerEmail) {
       return NextResponse.json(
@@ -54,13 +60,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Return a temporary session ID - we'll save to sheet on PATCH
+    // Get current time in IST
+    const startTimeIST = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    ).toISOString();
+
     const newSession = {
       id: `temp-${Date.now()}`,
-      playerName: playerEmail.split("@")[0],
+      playerName,
       playerEmail,
       house: house || undefined,
       gameType: "crossword",
-      startTime: new Date().toISOString(),
+      startTime: startTimeIST,
       completed: false,
       correctAnswers: 0,
       totalWords: totalWords || 0,
@@ -92,6 +103,7 @@ export async function PATCH(request: NextRequest) {
     // The session data should be passed in the request or stored temporarily
     const playerEmail = body.playerEmail || "";
     const house = body.house || "";
+    const name = body.name || "";
     const totalWords = body.totalWords || 0;
     const startTime = body.startTime || "";
 
@@ -111,6 +123,7 @@ export async function PATCH(request: NextRequest) {
     if (completed && playerEmail && house) {
       await addScoreToSheet({
         email: playerEmail,
+        name: name,
         house: house,
         game: "crossword",
         duration: duration,
@@ -122,6 +135,7 @@ export async function PATCH(request: NextRequest) {
       id,
       playerEmail,
       house,
+      name,
       gameType: "crossword",
       startTime,
       endTime,

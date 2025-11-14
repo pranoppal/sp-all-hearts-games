@@ -8,9 +8,14 @@ import axios from "axios";
 interface Props {
   playerEmail: string;
   playerHouse: string;
+  playerName: string;
 }
 
-export default function CrosswordGame({ playerEmail, playerHouse }: Props) {
+export default function CrosswordGame({
+  playerEmail,
+  playerHouse,
+  playerName,
+}: Props) {
   const [crossword, setCrossword] = useState<CrosswordGrid | null>(null);
   const [sessionId, setSessionId] = useState<string>("");
   const [sessionData, setSessionData] = useState<any>(null);
@@ -45,7 +50,7 @@ export default function CrosswordGame({ playerEmail, playerHouse }: Props) {
         const sessionResponse = await axios.post(
           "/api/games/crossword/sessions",
           {
-            playerName: playerEmail.split("@")[0], // Use email username as player name
+            playerName: playerName || playerEmail.split("@")[0], // Use email username as player name
             playerEmail: playerEmail,
             house: playerHouse,
             gameType: "crossword",
@@ -111,13 +116,19 @@ export default function CrosswordGame({ playerEmail, playerHouse }: Props) {
 
     setSubmitting(true);
     try {
+      // Get current time in IST
+      const endTimeIST = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+      ).toISOString();
+
       await axios.patch("/api/games/crossword/sessions", {
         id: sessionId,
         playerEmail: sessionData.playerEmail,
         house: sessionData.house,
+        name: sessionData.playerName,
         startTime: sessionData.startTime,
         totalWords: crossword.words.length,
-        endTime: new Date().toISOString(),
+        endTime: endTimeIST,
         completed,
         correctAnswers,
       });
@@ -239,7 +250,7 @@ export default function CrosswordGame({ playerEmail, playerHouse }: Props) {
                 <div className="text-3xl font-mono font-bold text-blue-600">
                   {formatTime(timer)}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-xl text-gray-600">
                   {checkAnswers()}/{crossword.words.length} correct
                 </div>
               </div>
@@ -326,6 +337,13 @@ export default function CrosswordGame({ playerEmail, playerHouse }: Props) {
                   )}
                 </div>
               </div>
+
+              <button
+                onClick={handleSubmit}
+                className="w-full mt-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+              >
+                Submit Answers
+              </button>
             </div>
 
             {/* Clues */}
@@ -399,13 +417,6 @@ export default function CrosswordGame({ playerEmail, playerHouse }: Props) {
                   </div>
                 </div>
               </div>
-
-              <button
-                onClick={handleSubmit}
-                className="w-full mt-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
-              >
-                Submit Answers
-              </button>
             </div>
           </div>
         </div>
