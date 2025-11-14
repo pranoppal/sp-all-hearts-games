@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import axios from "axios";
+
+interface GameTiming {
+  game: string;
+  start: string;
+  end: string;
+}
 
 export default function Home() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -11,6 +18,13 @@ export default function Home() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [hasPlayedCrossword, setHasPlayedCrossword] = useState(false);
+  const [hasPlayedSudoku, setHasPlayedSudoku] = useState(false);
+  const [hasPlayedWordle, setHasPlayedWordle] = useState(false);
+  const [hasPlayedTyping, setHasPlayedTyping] = useState(false);
+  const [hasPlayedMemory, setHasPlayedMemory] = useState(false);
+  const [gameTimings, setGameTimings] = useState<GameTiming[]>([]);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const houses = [
     { id: "fire", name: "Fire", emoji: "🔥", color: "red" },
@@ -19,16 +33,60 @@ export default function Home() {
     { id: "air", name: "Air", emoji: "💨", color: "purple" },
   ];
 
+  // Fetch game timings
   useEffect(() => {
-    // Check if email and house exist in localStorage
-    const savedEmail = localStorage.getItem("userEmail");
-    const savedHouse = localStorage.getItem("userHouse");
-    if (savedEmail && savedHouse) {
-      setUserEmail(savedEmail);
-      setUserHouse(savedHouse);
-    } else {
-      setShowEmailModal(true);
-    }
+    const fetchTimings = async () => {
+      try {
+        const response = await axios.get("/api/game-timings");
+        setGameTimings(response.data);
+      } catch (error) {
+        console.error("Error fetching game timings:", error);
+      }
+    };
+
+    fetchTimings();
+  }, []);
+
+  // Update current time every second for countdown
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const checkUserStatus = async () => {
+      // Check if email and house exist in localStorage
+      const savedEmail = localStorage.getItem("userEmail");
+      const savedHouse = localStorage.getItem("userHouse");
+
+      if (savedEmail && savedHouse) {
+        setUserEmail(savedEmail);
+        setUserHouse(savedHouse);
+
+        // Check if user has played crossword
+        try {
+          const response = await axios.get("/api/games/crossword/sessions");
+          const sessions = response.data;
+          const userCrosswordSession = sessions.find(
+            (session: any) =>
+              session.playerEmail === savedEmail && session.completed === true
+          );
+
+          if (userCrosswordSession) {
+            setHasPlayedCrossword(true);
+          }
+        } catch (error) {
+          console.error("Error checking game status:", error);
+        }
+      } else {
+        setShowEmailModal(true);
+      }
+    };
+
+    checkUserStatus();
   }, []);
 
   const handleEmailSubmit = (e: React.FormEvent) => {
@@ -65,6 +123,66 @@ export default function Home() {
     setEmailError("");
     setIsEditing(true);
     setShowEmailModal(true);
+  };
+
+  // Helper functions for game timing
+  const getGameTiming = (gameName: string): GameTiming | undefined => {
+    return gameTimings.find((t) => t.game === gameName.toLowerCase());
+  };
+
+  const isGameActive = (gameName: string): boolean => {
+    const timing = getGameTiming(gameName);
+    if (!timing) return true; // If no timing found, assume game is active
+    const start = new Date(timing.start);
+    const end = new Date(timing.end);
+    return currentTime >= start && currentTime <= end;
+  };
+
+  const isGameUpcoming = (gameName: string): boolean => {
+    const timing = getGameTiming(gameName);
+    if (!timing) return false;
+    const start = new Date(timing.start);
+    return currentTime < start;
+  };
+
+  const isGameEnded = (gameName: string): boolean => {
+    const timing = getGameTiming(gameName);
+    if (!timing) return false;
+    const end = new Date(timing.end);
+    return currentTime > end;
+  };
+
+  const formatCountdown = (milliseconds: number): string => {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) {
+      return `${days}d ${hours % 24}h ${minutes % 60}m`;
+    } else if (hours > 0) {
+      return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds % 60}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  };
+
+  const getCountdownToStart = (gameName: string): string => {
+    const timing = getGameTiming(gameName);
+    if (!timing) return "";
+    const start = new Date(timing.start);
+    const diff = start.getTime() - currentTime.getTime();
+    return formatCountdown(diff);
+  };
+
+  const getCountdownToEnd = (gameName: string): string => {
+    const timing = getGameTiming(gameName);
+    if (!timing) return "";
+    const end = new Date(timing.end);
+    const diff = end.getTime() - currentTime.getTime();
+    return formatCountdown(diff);
   };
 
   return (
@@ -236,74 +354,348 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto mb-12">
             <Link
               href="/games/crossword"
-              className="group rounded-xl border border-gray-200 bg-white px-6 py-8 transition-all hover:border-blue-500 hover:shadow-xl hover:scale-105"
+              className={`group rounded-xl border px-6 py-8 transition-all relative ${
+                hasPlayedCrossword
+                  ? "border-green-300 bg-green-50"
+                  : isGameUpcoming("crossword")
+                  ? "border-orange-300 bg-orange-50 cursor-not-allowed"
+                  : isGameEnded("crossword")
+                  ? "border-gray-300 bg-gray-100 opacity-60 cursor-not-allowed"
+                  : "border-gray-200 bg-white hover:border-blue-500 hover:shadow-xl hover:scale-105"
+              }`}
+              onClick={(e) => {
+                if (isGameUpcoming("crossword") || isGameEnded("crossword")) {
+                  e.preventDefault();
+                }
+              }}
             >
+              {hasPlayedCrossword && (
+                <div className="absolute top-4 right-4">
+                  <span className="text-3xl">✅</span>
+                </div>
+              )}
               <div className="text-5xl mb-4">🧩</div>
               <h2 className="mb-3 text-2xl font-semibold text-gray-900">
                 Crossword{" "}
-                <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                  →
-                </span>
+                {!hasPlayedCrossword && isGameActive("crossword") && (
+                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                    →
+                  </span>
+                )}
               </h2>
               <p className="m-0 text-sm text-gray-600">
                 Solve crossword puzzles and test your vocabulary skills!
               </p>
-              <div className="mt-4 inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-                Available
-              </div>
+
+              {/* Status badge and countdown */}
+              {hasPlayedCrossword ? (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                  ✓ Completed
+                </div>
+              ) : isGameUpcoming("crossword") ? (
+                <div className="mt-4 space-y-2">
+                  <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
+                    🔒 Locked
+                  </div>
+                  <div className="text-sm font-medium text-orange-700">
+                    Unlocks in: {getCountdownToStart("crossword")}
+                  </div>
+                </div>
+              ) : isGameEnded("crossword") ? (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-600">
+                  ⏰ Ended
+                </div>
+              ) : isGameActive("crossword") ? (
+                <div className="mt-4 space-y-2">
+                  <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                    🔥 Active
+                  </div>
+                  <div className="text-sm font-medium text-blue-700">
+                    Ends in: {getCountdownToEnd("crossword")}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                  Available
+                </div>
+              )}
             </Link>
 
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-6 py-8 opacity-60">
-              <div className="text-5xl mb-4">🔢</div>
-              <h2 className="mb-3 text-2xl font-semibold text-gray-700">
-                Sudoku
-              </h2>
-              <p className="m-0 text-sm text-gray-600">
-                Challenge your logic with number puzzles.
-              </p>
-              <div className="mt-4 inline-block px-3 py-1 bg-gray-200 text-gray-600 text-xs font-semibold rounded-full">
-                Coming Soon
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-6 py-8 opacity-60">
+            <Link
+              href="/games/wordle"
+              className={`group rounded-xl border px-6 py-8 transition-all relative ${
+                hasPlayedWordle
+                  ? "border-green-300 bg-green-50"
+                  : isGameUpcoming("wordle")
+                  ? "border-orange-300 bg-orange-50 cursor-not-allowed"
+                  : isGameEnded("wordle")
+                  ? "border-gray-300 bg-gray-100 opacity-60 cursor-not-allowed"
+                  : "border-gray-200 bg-white hover:border-blue-500 hover:shadow-xl hover:scale-105"
+              }`}
+              onClick={(e) => {
+                if (isGameUpcoming("wordle") || isGameEnded("wordle")) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              {hasPlayedWordle && (
+                <div className="absolute top-4 right-4">
+                  <span className="text-3xl">✅</span>
+                </div>
+              )}
               <div className="text-5xl mb-4">📝</div>
-              <h2 className="mb-3 text-2xl font-semibold text-gray-700">
-                Wordle
+              <h2 className="mb-3 text-2xl font-semibold text-gray-900">
+                Wordle{" "}
+                {!hasPlayedWordle && isGameActive("wordle") && (
+                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                    →
+                  </span>
+                )}
               </h2>
               <p className="m-0 text-sm text-gray-600">
                 Guess the word in 6 tries or less!
               </p>
-              <div className="mt-4 inline-block px-3 py-1 bg-gray-200 text-gray-600 text-xs font-semibold rounded-full">
-                Coming Soon
-              </div>
-            </div>
 
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-6 py-8 opacity-60">
+              {/* Status badge and countdown */}
+              {hasPlayedWordle ? (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                  ✓ Completed
+                </div>
+              ) : isGameUpcoming("wordle") ? (
+                <div className="mt-4 space-y-2">
+                  <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
+                    🔒 Locked
+                  </div>
+                  <div className="text-sm font-medium text-orange-700">
+                    Unlocks in: {getCountdownToStart("wordle")}
+                  </div>
+                </div>
+              ) : isGameEnded("wordle") ? (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-600">
+                  ⏰ Ended
+                </div>
+              ) : isGameActive("wordle") ? (
+                <div className="mt-4 space-y-2">
+                  <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                    🔥 Active
+                  </div>
+                  <div className="text-sm font-medium text-blue-700">
+                    Ends in: {getCountdownToEnd("wordle")}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                  Available
+                </div>
+              )}
+            </Link>
+
+            <Link
+              href="/games/sudoku"
+              className={`group rounded-xl border px-6 py-8 transition-all relative ${
+                hasPlayedSudoku
+                  ? "border-green-300 bg-green-50"
+                  : isGameUpcoming("sudoku")
+                  ? "border-orange-300 bg-orange-50 cursor-not-allowed"
+                  : isGameEnded("sudoku")
+                  ? "border-gray-300 bg-gray-100 opacity-60 cursor-not-allowed"
+                  : "border-gray-200 bg-white hover:border-blue-500 hover:shadow-xl hover:scale-105"
+              }`}
+              onClick={(e) => {
+                if (isGameUpcoming("sudoku") || isGameEnded("sudoku")) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              {hasPlayedSudoku && (
+                <div className="absolute top-4 right-4">
+                  <span className="text-3xl">✅</span>
+                </div>
+              )}
+              <div className="text-5xl mb-4">🔢</div>
+              <h2 className="mb-3 text-2xl font-semibold text-gray-900">
+                Sudoku{" "}
+                {!hasPlayedSudoku && isGameActive("sudoku") && (
+                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                    →
+                  </span>
+                )}
+              </h2>
+              <p className="m-0 text-sm text-gray-600">
+                Challenge your logic with number puzzles.
+              </p>
+
+              {/* Status badge and countdown */}
+              {hasPlayedSudoku ? (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                  ✓ Completed
+                </div>
+              ) : isGameUpcoming("sudoku") ? (
+                <div className="mt-4 space-y-2">
+                  <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
+                    🔒 Locked
+                  </div>
+                  <div className="text-sm font-medium text-orange-700">
+                    Unlocks in: {getCountdownToStart("sudoku")}
+                  </div>
+                </div>
+              ) : isGameEnded("sudoku") ? (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-600">
+                  ⏰ Ended
+                </div>
+              ) : isGameActive("sudoku") ? (
+                <div className="mt-4 space-y-2">
+                  <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                    🔥 Active
+                  </div>
+                  <div className="text-sm font-medium text-blue-700">
+                    Ends in: {getCountdownToEnd("sudoku")}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                  Available
+                </div>
+              )}
+            </Link>
+
+            <Link
+              href="/games/typing"
+              className={`group rounded-xl border px-6 py-8 transition-all relative ${
+                hasPlayedTyping
+                  ? "border-green-300 bg-green-50"
+                  : isGameUpcoming("typing")
+                  ? "border-orange-300 bg-orange-50 cursor-not-allowed"
+                  : isGameEnded("typing")
+                  ? "border-gray-300 bg-gray-100 opacity-60 cursor-not-allowed"
+                  : "border-gray-200 bg-white hover:border-blue-500 hover:shadow-xl hover:scale-105"
+              }`}
+              onClick={(e) => {
+                if (isGameUpcoming("typing") || isGameEnded("typing")) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              {hasPlayedTyping && (
+                <div className="absolute top-4 right-4">
+                  <span className="text-3xl">✅</span>
+                </div>
+              )}
               <div className="text-5xl mb-4">⌨️</div>
-              <h2 className="mb-3 text-2xl font-semibold text-gray-700">
-                Typing Competition
+              <h2 className="mb-3 text-2xl font-semibold text-gray-900">
+                Typing Competition{" "}
+                {!hasPlayedTyping && isGameActive("typing") && (
+                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                    →
+                  </span>
+                )}
               </h2>
               <p className="m-0 text-sm text-gray-600">
                 Test your typing speed and accuracy!
               </p>
-              <div className="mt-4 inline-block px-3 py-1 bg-gray-200 text-gray-600 text-xs font-semibold rounded-full">
-                Coming Soon
-              </div>
-            </div>
 
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-6 py-8 opacity-60">
+              {/* Status badge and countdown */}
+              {hasPlayedTyping ? (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                  ✓ Completed
+                </div>
+              ) : isGameUpcoming("typing") ? (
+                <div className="mt-4 space-y-2">
+                  <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
+                    🔒 Locked
+                  </div>
+                  <div className="text-sm font-medium text-orange-700">
+                    Unlocks in: {getCountdownToStart("typing")}
+                  </div>
+                </div>
+              ) : isGameEnded("typing") ? (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-600">
+                  ⏰ Ended
+                </div>
+              ) : isGameActive("typing") ? (
+                <div className="mt-4 space-y-2">
+                  <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                    🔥 Active
+                  </div>
+                  <div className="text-sm font-medium text-blue-700">
+                    Ends in: {getCountdownToEnd("typing")}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                  Available
+                </div>
+              )}
+            </Link>
+
+            <Link
+              href="/games/memory"
+              className={`group rounded-xl border px-6 py-8 transition-all relative ${
+                hasPlayedMemory
+                  ? "border-green-300 bg-green-50"
+                  : isGameUpcoming("memory")
+                  ? "border-orange-300 bg-orange-50 cursor-not-allowed"
+                  : isGameEnded("memory")
+                  ? "border-gray-300 bg-gray-100 opacity-60 cursor-not-allowed"
+                  : "border-gray-200 bg-white hover:border-blue-500 hover:shadow-xl hover:scale-105"
+              }`}
+              onClick={(e) => {
+                if (isGameUpcoming("memory") || isGameEnded("memory")) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              {hasPlayedMemory && (
+                <div className="absolute top-4 right-4">
+                  <span className="text-3xl">✅</span>
+                </div>
+              )}
               <div className="text-5xl mb-4">🎯</div>
-              <h2 className="mb-3 text-2xl font-semibold text-gray-700">
-                Memory Game
+              <h2 className="mb-3 text-2xl font-semibold text-gray-900">
+                Memory Game{" "}
+                {!hasPlayedMemory && isGameActive("memory") && (
+                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
+                    →
+                  </span>
+                )}
               </h2>
               <p className="m-0 text-sm text-gray-600">
                 Match pairs and train your memory!
               </p>
-              <div className="mt-4 inline-block px-3 py-1 bg-gray-200 text-gray-600 text-xs font-semibold rounded-full">
-                Coming Soon
-              </div>
-            </div>
+
+              {/* Status badge and countdown */}
+              {hasPlayedMemory ? (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                  ✓ Completed
+                </div>
+              ) : isGameUpcoming("memory") ? (
+                <div className="mt-4 space-y-2">
+                  <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
+                    🔒 Locked
+                  </div>
+                  <div className="text-sm font-medium text-orange-700">
+                    Unlocks in: {getCountdownToStart("memory")}
+                  </div>
+                </div>
+              ) : isGameEnded("memory") ? (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-600">
+                  ⏰ Ended
+                </div>
+              ) : isGameActive("memory") ? (
+                <div className="mt-4 space-y-2">
+                  <div className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                    🔥 Active
+                  </div>
+                  <div className="text-sm font-medium text-blue-700">
+                    Ends in: {getCountdownToEnd("memory")}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                  Available
+                </div>
+              )}
+            </Link>
 
             <div className="rounded-xl border border-gray-200 bg-gray-50 px-6 py-8 opacity-60">
               <div className="text-5xl mb-4">🎲</div>

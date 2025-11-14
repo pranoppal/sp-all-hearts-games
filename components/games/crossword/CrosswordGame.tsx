@@ -259,16 +259,21 @@ export default function CrosswordGame({ playerEmail, playerHouse }: Props) {
                 >
                   {crossword.grid.map((row, y) =>
                     row.map((cell, x) => {
-                      const word = crossword.words.find(
+                      // Find BOTH across and down words at this position
+                      const acrossWord = crossword.words.find(
                         (w) =>
-                          (w.direction === "across" &&
-                            w.startY === y &&
-                            x >= w.startX &&
-                            x < w.startX + w.word.length) ||
-                          (w.direction === "down" &&
-                            w.startX === x &&
-                            y >= w.startY &&
-                            y < w.startY + w.word.length)
+                          w.direction === "across" &&
+                          w.startY === y &&
+                          x >= w.startX &&
+                          x < w.startX + w.word.length
+                      );
+
+                      const downWord = crossword.words.find(
+                        (w) =>
+                          w.direction === "down" &&
+                          w.startX === x &&
+                          y >= w.startY &&
+                          y < w.startY + w.word.length
                       );
 
                       const isStart = crossword.words.some(
@@ -282,14 +287,20 @@ export default function CrosswordGame({ playerEmail, playerHouse }: Props) {
                         : undefined;
 
                       // Get the letter to display from the user's answer
+                      // Check both across and down words for this cell
                       let displayLetter = "";
-                      if (word && cell) {
-                        const letterIndex =
-                          word.direction === "across"
-                            ? x - word.startX
-                            : y - word.startY;
-                        const userAnswer = answers[word.id] || "";
-                        displayLetter = userAnswer[letterIndex] || "";
+                      if (cell) {
+                        if (acrossWord) {
+                          const letterIndex = x - acrossWord.startX;
+                          const userAnswer = answers[acrossWord.id] || "";
+                          displayLetter = userAnswer[letterIndex] || "";
+                        }
+                        // If no letter from across, try down word
+                        if (!displayLetter && downWord) {
+                          const letterIndex = y - downWord.startY;
+                          const userAnswer = answers[downWord.id] || "";
+                          displayLetter = userAnswer[letterIndex] || "";
+                        }
                       }
 
                       return (
