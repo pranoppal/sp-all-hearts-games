@@ -3,6 +3,10 @@ import { getWords, addWord, deleteWord } from '@/lib/games/crossword/storage';
 import { Word } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
+// Force dynamic rendering - don't cache
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const words = await getWords();
