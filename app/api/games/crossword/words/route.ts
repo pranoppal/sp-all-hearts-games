@@ -51,6 +51,7 @@ export async function DELETE(request: NextRequest) {
     await deleteWord(id);
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.log('error', error);
     return NextResponse.json({ error: 'Failed to delete word' }, { status: 500 });
   }
 }

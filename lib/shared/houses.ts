@@ -30,9 +30,9 @@ export const HOUSES: House[] = [
   },
   {
     id: "shakti",
-    name: "Shakti Compilers",
+    name: "Shakti Compliers",
     emoji: "⚡",
-    logo: "/shakti_compilers.png",
+    logo: "/shakti_compliers.png",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
     borderColor: "border-purple-500",

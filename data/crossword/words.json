@@ -6,18 +6,6 @@
     "createdAt": "2025-11-14T08:05:52.932Z"
   },
   {
-    "id": "17d0e947-bcc1-4894-9bec-05ea5dccfbf9",
-    "word": "kriya",
-    "clue": "Inward action",
-    "createdAt": "2025-11-14T08:05:58.540Z"
-  },
-  {
-    "id": "623bde33-1687-4555-89ba-0ede89c9c995",
-    "word": "kaivalya kutir",
-    "clue": "The first meditation hall of Isha",
-    "createdAt": "2025-11-14T08:06:06.011Z"
-  },
-  {
     "id": "87e548bd-3dd8-4422-8510-2fbc37bff619",
     "word": "gemini",
     "clue": "A zodiac sign that can chat",
@@ -28,18 +16,6 @@
     "word": "vidyarambham",
     "clue": "Linga Bhairavi ritual to introduce children to the world of knowledge",
     "createdAt": "2025-11-14T08:06:15.958Z"
-  },
-  {
-    "id": "67b32671-765a-42f8-8110-c3a4ed9e61d3",
-    "word": "karthigai deepam",
-    "clue": "The festival of lights on Pournami",
-    "createdAt": "2025-11-14T08:06:20.859Z"
-  },
-  {
-    "id": "2d49eab0-887d-45a8-a449-4ee3585ce709",
-    "word": "divyadarshanam",
-    "clue": "An event to fill Adiyogi with streams of light",
-    "createdAt": "2025-11-14T08:06:26.824Z"
   },
   {
     "id": "73b58e15-250b-47c9-9408-4570d9f00dd7",
@@ -54,33 +30,63 @@
     "createdAt": "2025-11-14T08:06:39.843Z"
   },
   {
-    "id": "91b2ba48-3553-40de-bf0a-a36cf2bf0333",
-    "word": "peppervine",
-    "clue": "The Biksha hall substitute ",
-    "createdAt": "2025-11-14T08:06:45.527Z"
+    "id": "6a81c40a-e518-4850-99c7-7ac579d01a2c",
+    "word": "kaivalyakutir",
+    "clue": "The first meditation hall of Isha",
+    "createdAt": "2025-11-15T09:20:22.768Z"
   },
   {
-    "id": "6fa4c988-e0f3-4b15-8ce0-3e9f8530b513",
-    "word": "gurupurnima",
-    "clue": "The day Sadhanapana starts",
-    "createdAt": "2025-11-14T08:06:51.039Z"
-  },
-  {
-    "id": "29ef3847-9cdc-4e66-83dc-6a8315be1735",
-    "word": "mystics musings",
+    "id": "e5c4f888-4b61-42eb-8f64-b99e3353f5d9",
+    "word": "mysticsmusings",
     "clue": "Paper based Yantra",
-    "createdAt": "2025-11-14T08:06:56.321Z"
+    "createdAt": "2025-11-15T09:21:37.638Z"
   },
   {
-    "id": "ebf7b60e-5493-431e-b026-16dd49e8e66c",
-    "word": "eternal echoes",
+    "id": "4c741ed5-5de5-4141-ae64-0ac8627234d7",
+    "word": "eternalechoes",
     "clue": "A book of poems",
-    "createdAt": "2025-11-14T08:07:00.951Z"
+    "createdAt": "2025-11-15T09:21:50.347Z"
   },
   {
-    "id": "f41a0690-1e0d-48c2-b4b7-4d48b33add80",
+    "id": "689a994c-033d-4f50-bb95-770712421913",
+    "word": "kriya",
+    "clue": "Inward action",
+    "createdAt": "2025-11-15T09:26:34.519Z"
+  },
+  {
+    "id": "4009522b-25f6-46af-a889-47e29ff434d1",
+    "word": "divyadarshanam",
+    "clue": "An event to fill Adiyogi with streams of light",
+    "createdAt": "2025-11-15T09:28:15.611Z"
+  },
+  {
+    "id": "ade33533-876c-4fd5-96ac-eaf067fca36c",
     "word": "patanjali",
-    "clue": "Father of yoga",
-    "createdAt": "2025-11-14T08:07:05.294Z"
+    "clue": "Father of modern yoga",
+    "createdAt": "2025-11-15T09:45:15.830Z"
+  },
+  {
+    "id": "b113d223-e288-49ab-94d2-0da668975f2f",
+    "word": "akshaya",
+    "clue": "The place from where our food comes",
+    "createdAt": "2025-11-15T09:47:12.063Z"
+  },
+  {
+    "id": "271072f6-9d46-4c34-95d5-c49d228c0261",
+    "word": "nandi",
+    "clue": "Eternal waiting bull",
+    "createdAt": "2025-11-15T09:47:28.011Z"
+  },
+  {
+    "id": "14e6dac5-b214-49d4-ba6a-e1c8cec6f2cc",
+    "word": "shoonya",
+    "clue": "Doing nothing!",
+    "createdAt": "2025-11-15T09:47:41.595Z"
+  },
+  {
+    "id": "0ad234d4-100f-4c14-ad35-17849700de6f",
+    "word": "nalanda",
+    "clue": "A ground and a cottage",
+    "createdAt": "2025-11-15T09:48:09.878Z"
   }
 ]
