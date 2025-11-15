@@ -11,6 +11,7 @@ interface HouseScore {
   houseId: string;
   totalPoints: number;
   totalGames: number;
+  totalPlayers: number;
   averageScore: number;
 }
 
@@ -38,28 +39,23 @@ export default function LeaderboardPage() {
   };
 
   const calculateHouseScores = (): HouseScore[] => {
-    // --- CONFIGURE THESE TO TASTE ---
-    const ACCURACY_WEIGHT = 0.75; // relative weight for correctness
-    const SPEED_WEIGHT = 0.25; // relative weight for speed (only if correctAnswers >= 1)
-    const MAX_SPEED_THRESHOLD = 300; // seconds; responses faster than this get more speed credit
-    const PARTICIPATION_POINTS = 8; // points (0-100) given if user answered 0 but participated
-    // ---------------------------------
+    // --- WEIGHTS ---
+    const USER_SCORE_WEIGHT = 0.2; // 40% - User accuracy score
+    const SPEED_WEIGHT = 0.2; // 40% - Speed/duration bonus
+    const PARTICIPATION_WEIGHT = 0.4; // 20% - House participation count
+    const MAX_SPEED_THRESHOLD = 300; // seconds for speed calculation
+    // ----------------
 
     // Helper: clamp to [min, max]
     const clamp = (v: number, min = 0, max = 100) =>
       Math.max(min, Math.min(max, v));
 
-    // Compute session score according to rules
+    // Calculate per-session user score (accuracy + speed, no participation credit)
     const computeSessionScore = (s): number => {
       if (!s.totalWords || s.totalWords <= 0) return 0;
 
       const correct = Math.max(0, s.correctAnswers ?? 0);
       const accuracyPct = clamp((correct / s.totalWords) * 100, 0, 100);
-
-      if (correct === 0) {
-        // Participation credit only (no speed bonus)
-        return PARTICIPATION_POINTS;
-      }
 
       // Speed contribution (normalized 0-100). Larger if duration is small.
       const dur =
@@ -70,120 +66,97 @@ export default function LeaderboardPage() {
         100
       );
 
-      const weighted =
-        ACCURACY_WEIGHT * accuracyPct + SPEED_WEIGHT * speedNormalized;
-      return clamp(weighted, 0, 100);
+      // Combined score: 40% accuracy + 40% speed
+      const combined =
+        USER_SCORE_WEIGHT * accuracyPct + SPEED_WEIGHT * speedNormalized;
+      return clamp(combined, 0, 100);
     };
 
-    // Group sessions by house -> userId -> array of session scores
+    // Get all completed sessions
+    const completedSessions = sessions.filter((s) => s.completed);
+
+    // Group sessions by house
     const houseUserMap: {
       [house: string]: {
-        [userId: string]: { sessionScores: number[]; sessions: number };
+        sessionScores: number[];
+        participantCount: number;
       };
     } = {};
 
     // Initialize houses
     HOUSES.forEach((h) => {
-      houseUserMap[h.name] = {};
+      houseUserMap[h.name] = {
+        sessionScores: [],
+        participantCount: 0,
+      };
     });
 
-    // Populate
-    sessions.forEach((session) => {
-      if (!session.completed) return;
+    // Populate sessions and track unique participants per house
+    const houseParticipants: { [house: string]: Set<string> } = {};
+    HOUSES.forEach((h) => {
+      houseParticipants[h.name] = new Set();
+    });
+
+    completedSessions.forEach((session) => {
       const houseName = session.house?.trim();
       if (!houseName || houseName === "other") return;
-      if (!houseUserMap[houseName]) return; // ignore houses not in HOUSES
-
-      const userId = session.playerEmail ?? "__anonymous__";
+      if (!houseUserMap[houseName]) return;
 
       const score = computeSessionScore(session);
-      if (!houseUserMap[houseName][userId]) {
-        houseUserMap[houseName][userId] = { sessionScores: [], sessions: 0 };
-      }
-      houseUserMap[houseName][userId].sessionScores.push(score);
-      houseUserMap[houseName][userId].sessions += 1;
+      houseUserMap[houseName].sessionScores.push(score);
+
+      // Track unique participants
+      const userId = session.playerEmail ?? "__anonymous__";
+      houseParticipants[houseName].add(userId);
     });
 
-    // Build results: for each house, compute per-user averages, then house average across users
+    // Update participant counts
+    HOUSES.forEach((h) => {
+      houseUserMap[h.name].participantCount = houseParticipants[h.name].size;
+    });
+
+    // Find max participation for normalization
+    const maxParticipants = Math.max(
+      ...HOUSES.map((h) => houseUserMap[h.name].participantCount),
+      1
+    );
+
+    // Build results with all three weighted components
     const results: HouseScore[] = HOUSES.map((house) => {
-      const users = houseUserMap[house.name] || {};
-      const userIds = Object.keys(users);
+      const houseData = houseUserMap[house.name];
+      const sessionScores = houseData.sessionScores;
+      const participantCount = houseData.participantCount;
 
-      // Per-user average
-      const perUserAverages = userIds.map((uid) => {
-        const arr = users[uid].sessionScores;
-        const sum = arr.reduce((a, b) => a + b, 0);
-        return arr.length > 0 ? sum / arr.length : 0;
-      });
-
-      const totalPlayers = perUserAverages.length;
-      const houseAvg =
-        totalPlayers > 0
-          ? perUserAverages.reduce((a, b) => a + b, 0) / totalPlayers
+      // Component 1: Average user score (accuracy + speed)
+      const avgUserScore =
+        sessionScores.length > 0
+          ? sessionScores.reduce((a, b) => a + b, 0) / sessionScores.length
           : 0;
 
-      // totalGames: total number of sessions counted for the house
-      const totalGames = userIds.reduce(
-        (acc, uid) => acc + users[uid].sessions,
-        0
-      );
+      // Component 2: Participation normalized (0-100)
+      const participationScore = (participantCount / maxParticipants) * 100;
 
-      const rounded = Math.round(houseAvg);
+      // Note: speedNormalized is already included in avgUserScore calculation
+      // The avgUserScore already contains 40% accuracy + 40% speed
+
+      // Final house score: 40% user score + 40% speed (in avgUserScore) + 20% participation
+      const finalScore =
+        avgUserScore * (USER_SCORE_WEIGHT + SPEED_WEIGHT) +
+        participationScore * PARTICIPATION_WEIGHT;
+
+      const totalGames = sessionScores.length;
 
       return {
         houseId: house.name,
-        totalPoints: rounded,
+        totalPoints: Math.round(finalScore),
         totalGames,
-        totalPlayers,
-        averageScore: rounded,
+        totalPlayers: participantCount,
+        averageScore: Math.round(finalScore),
       };
     });
 
     // Sort by totalPoints descending
     return results.sort((a, b) => b.totalPoints - a.totalPoints);
-  };
-
-  // Calculate house scores
-  const calculateHouseScores2 = (): HouseScore[] => {
-    const houseData: { [key: string]: { totalScore: number; games: number } } =
-      {};
-
-    // Initialize all houses
-    HOUSES.forEach((house) => {
-      houseData[house.name] = { totalScore: 0, games: 0 };
-    });
-
-    // Calculate points for each completed session (exclude "other" house)
-    sessions.forEach((session) => {
-      if (
-        session.completed &&
-        session.house &&
-        session.house !== "other" &&
-        houseData[session.house.trim()]
-      ) {
-        const scorePercentage =
-          (session.correctAnswers / session.totalWords) * 100;
-        const timeBonus = session.duration
-          ? Math.max(0, Math.min(30, (300 - session.duration) / 10))
-          : 0; // Bonus for speed (max 30 points)
-        const userScore = Math.min(100, scorePercentage + timeBonus); // Cap at 100
-
-        houseData[session.house.trim()].totalScore += userScore;
-        houseData[session.house.trim()].games += 1;
-      }
-    });
-
-    return HOUSES.map((house) => ({
-      houseId: house.name,
-      totalPoints: Math.round(houseData[house.name].totalScore),
-      totalGames: houseData[house.name].games,
-      averageScore:
-        houseData[house.name].games > 0
-          ? Math.round(
-              houseData[house.name].totalScore / houseData[house.name].games
-            )
-          : 0,
-    })).sort((a, b) => b.totalPoints - a.totalPoints);
   };
 
   // Get players from selected house or all players (exclude "other" house)
@@ -253,7 +226,7 @@ export default function LeaderboardPage() {
           <h2 className="text-2xl font-bold mb-6 text-gray-900">
             🏠 House Standings
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {houseScores.map((houseScore, index) => {
               const house = getHouseById(houseScore.houseId);
               if (!house) return null;
@@ -261,26 +234,28 @@ export default function LeaderboardPage() {
               return (
                 <div
                   key={house.name}
-                  className={`p-4 rounded-lg border-2 text-center ${house.bgColor} ${house.borderColor}`}
+                  className="p-6 rounded-lg text-center bg-gradient-to-br from-slate-50 to-slate-100 hover:shadow-md transition-shadow"
                 >
-                  <div className="text-3xl font-bold text-gray-400 mb-2">
+                  <div className="text-4xl font-bold text-gray-300 mb-3">
                     #{index + 1}
                   </div>
-                  <Image
-                    src={house.logo}
-                    alt={house.name}
-                    width={40}
-                    height={40}
-                    className="rounded-lg mx-auto mb-2"
-                  />
-                  <h3 className={`text-lg font-bold ${house.color} mb-2`}>
+                  <div className="h-16 flex items-center justify-center mb-3">
+                    <Image
+                      src={house.logo}
+                      alt={house.name}
+                      width={50}
+                      height={50}
+                      className="rounded-lg"
+                    />
+                  </div>
+                  <h3 className={`text-lg font-bold ${house.color} mb-3`}>
                     {house.name}
                   </h3>
-                  <div className={`text-2xl font-bold ${house.color}`}>
+                  <div className={`text-3xl font-bold ${house.color} mb-1`}>
                     {houseScore.totalPoints}
                   </div>
-                  <p className="text-xs text-gray-600">
-                    {houseScore.totalGames} games
+                  <p className="text-xs text-gray-500">
+                    {houseScore.totalPlayers} participants
                   </p>
                 </div>
               );
@@ -347,8 +322,8 @@ export default function LeaderboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {housePlayers.map((player, index) => {
-                const house = getHouseById(player.house || "");
+              {housePlayers.slice(0, 20).map((player, index) => {
+                const house = getHouseById(player.house.trim() || "");
                 return (
                   <div
                     key={player.id}
