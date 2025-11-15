@@ -13,6 +13,7 @@ interface GameTiming {
 export default function Home() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userHouse, setUserHouse] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [emailInput, setEmailInput] = useState("");
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -43,10 +44,12 @@ export default function Home() {
       // Check user status
       const savedEmail = localStorage.getItem("userEmail");
       const savedHouse = localStorage.getItem("userHouse");
+      const savedName = localStorage.getItem("playerName");
 
       if (savedEmail && savedHouse) {
         setUserEmail(savedEmail);
         setUserHouse(savedHouse);
+        setUserName(savedName || savedEmail.split("@")[0]);
 
         // Check if user has played crossword
         try {
@@ -305,7 +308,7 @@ export default function Home() {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md">
             <span className="text-sm text-gray-600">Playing as:</span>
             <span className="text-sm font-semibold text-gray-900">
-              {userEmail}
+              {userName}
             </span>
             <button
               onClick={handleEditEmail}

@@ -23,7 +23,6 @@ export default function LeaderboardPage() {
   useEffect(() => {
     const savedHouse = localStorage.getItem("userHouse");
     setUserHouse(savedHouse);
-    setSelectedHouse(savedHouse); // Default to user's house
     fetchSessions();
   }, []);
 
