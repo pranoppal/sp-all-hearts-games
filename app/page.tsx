@@ -117,9 +117,13 @@ export default function Home() {
       // Save email, house, and name to localStorage
       localStorage.setItem("userEmail", trimmedEmail);
       localStorage.setItem("userHouse", userData.house);
-      localStorage.setItem("playerName", userData.name || trimmedEmail);
+      localStorage.setItem(
+        "playerName",
+        userData.name || trimmedEmail.split("@")[0]
+      );
       setUserEmail(trimmedEmail);
       setUserHouse(userData.house);
+      setUserName(userData.name || trimmedEmail.split("@")[0]);
       setShowEmailModal(false);
       setIsEditing(false);
       setEmailInput("");
