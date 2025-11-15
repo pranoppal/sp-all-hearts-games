@@ -9,11 +9,6 @@ export async function GET() {
   try {
     const scores = await getScoresByGame("crossword");
 
-    // Get current time in IST
-    const currentTimeIST = new Date(
-      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-    ).toISOString();
-
     // Transform scores to session format for backward compatibility
     console.log('scores', scores);
     const sessions = scores.map((score, index) => ({
@@ -22,7 +17,7 @@ export async function GET() {
       playerEmail: score.email,
       house: score.house,
       gameType: "crossword",
-      startTime: currentTimeIST, // We don't have this data
+      startTime: new Date(),
       completed: true,
       correctAnswers: Math.round((score.score / 100) * 10), // Approximate
       totalWords: 10, // Approximate
@@ -60,18 +55,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Return a temporary session ID - we'll save to sheet on PATCH
-    // Get current time in IST
-    const startTimeIST = new Date(
-      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-    ).toISOString();
-
     const newSession = {
       id: `temp-${Date.now()}`,
       playerName,
       playerEmail,
       house: house || undefined,
       gameType: "crossword",
-      startTime: startTimeIST,
+      startTime: new Date(),
       completed: false,
       correctAnswers: 0,
       totalWords: totalWords || 0,

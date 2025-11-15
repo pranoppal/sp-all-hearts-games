@@ -41,22 +41,10 @@ export default function CrosswordPage() {
           );
 
           if (crosswordTiming) {
-            // Get current time in IST
-            const now = new Date(
-              new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-            );
+            const now = new Date();
 
-            // Parse timing dates as IST
-            const start = new Date(
-              new Date(crosswordTiming.start).toLocaleString("en-US", {
-                timeZone: "Asia/Kolkata",
-              })
-            );
-            const end = new Date(
-              new Date(crosswordTiming.end).toLocaleString("en-US", {
-                timeZone: "Asia/Kolkata",
-              })
-            );
+            const start = new Date(crosswordTiming.start);
+            const end = new Date(crosswordTiming.end);
 
             if (now < start) {
               setGameStatus("upcoming");

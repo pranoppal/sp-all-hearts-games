@@ -225,8 +225,6 @@ export async function getUserByEmail(email: string): Promise<UserData | null> {
   try {
     const sheet = await initUsersSheet();
     const rows = await sheet.getRows();
-    console.log('rows length', rows.length);
-    console.log('rows', rows);
 
     // Search for user by email (case-insensitive)
     const userRow = rows.find((row: any) => {

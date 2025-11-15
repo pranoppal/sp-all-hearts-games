@@ -116,10 +116,7 @@ export default function CrosswordGame({
 
     setSubmitting(true);
     try {
-      // Get current time in IST
-      const endTimeIST = new Date(
-        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-      ).toISOString();
+      const endTimeIST = new Date();
 
       await axios.patch("/api/games/crossword/sessions", {
         id: sessionId,
@@ -240,7 +237,7 @@ export default function CrosswordGame({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Player: {playerEmail.split("@")[0]}
+                  Player: {playerName}
                 </h2>
                 <p className="text-sm text-gray-500">{playerEmail}</p>
               </div>
